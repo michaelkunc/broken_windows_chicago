@@ -125,19 +125,29 @@ for (var i = 0; i < rawData.length; i ++ ){
   container[num] = container[num] ? container[num] + 1 : 1;
 }
 
-var crimes = Object.keys(container);
 var crimeCounts = [];
-
-for (var key in container) {
-  if (container.hasOwnProperty(key)) {
-    crimeCounts.push(container[key]);
-  }
+// sorts the crime counts descending
+for (var crime in container){
+  crimeCounts.push([crime, container[crime]]);
+  crimeCounts.sort(function(a,b) {return b[1] - a[1]})
 }
+
+console.log(crimeCounts);
+
+// this sorts the container hash into two arrays. DO NOT LIKE.
+// var crimes = Object.keys(container);
+// var crimeCounts = [];
+
+// for (var key in container) {
+//   if (container.hasOwnProperty(key)) {
+//     crimeCounts.push(container[key]);
+//   }
+// }
 
 var data = [
   {
-    x: [crimes[0], crimes[1], crimes[2]],
-    y: [crimeCounts[0], crimeCounts[1], crimeCounts[2]],
+    x: [crimeCounts[0][0], crimeCounts[1][0], crimeCounts[2][0]],
+    y: [crimeCounts[0][1], crimeCounts[1][1], crimeCounts[2][1]],
     type: 'bar'
   }
 ];
