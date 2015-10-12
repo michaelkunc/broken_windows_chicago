@@ -32,27 +32,26 @@
     <div id="map" class='z-depth-4'></div>
     <!-- Modal Trigger -->
     <div class="menu">
-        <a class="waves-effect waves-light btn modal-trigger blue darken-4 z-depth-2" href="#crime">Crime</a>
-        <a class="waves-effect waves-light btn modal-trigger blue darken-4 z-depth-2" href="#311">311</a>
+        <a class="waves-effect waves-light btn modal-trigger blue darken-4 z-depth-2" href="#crime">Crime by type</a>
+        <a class="waves-effect waves-light btn modal-trigger blue darken-4 z-depth-2" href="#311">Crime/311 by ward</a>
         <a class="waves-effect waves-light btn modal-trigger blue darken-4 z-depth-2" href="#311">Ward</a>
     </div>
     <!-- Modal Structure -->
     <div id="crime" class="modal">
         <div class="modal-content">
-            <h5>Crimes By Calendar Year</h5>
-            <div id="bar_chart" class='z-depth-1'></div>
+            <h5>Crimes By Type</h5>
+            <div id="crime_type_bar_chart" class='z-depth-1'></div>
         </div>
     </div>
     <div id="311" class="modal">
         <div class="modal-content">
-            <h5>311 Chart goes here</h5>
+            <h5>Crime/311 by Ward</h5>
+            <div id="crime_311_by_ward" class='z-depth-1'></div>
         </div>
     </div>
 </body>
 <script src='js/application.js'></script>
-<script src='js/map.js'></script>
-<script src='js/bar_chart.js'></script>
-<script src='js/bar_chart2.js'></script>
+<script src = 'js/charts.js'></script>
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=&signed_in=true&libraries=visualization&callback=initMap">
 </script>
 
