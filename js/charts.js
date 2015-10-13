@@ -1,82 +1,67 @@
-var crimeData = [];
-
-// ajax call to crime dataset
-$.ajax({
-    url: "https://data.cityofchicago.org/resource/6zsd-86xi.json?year=2014",
-    dataType: 'json',
-    async: false,
-    success: function(results) {
-        $.each(results, function(index, value) {
-            crimeData.push(value);
-        });
-    }
-});
-
-
-// caching length of datasets
-var crimeDataLength = crimeData.length;
+// // caching length of datasets
+// var crimeDataLength = crimeData.length;
 
 
 // HEAT MAP
-var map, heatmap;
+// var map, heatmap;
 
-function initMap() {
-    map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 10,
-        center: {
-            lat: 41.8914,
-            lng: -87.666
-        },
-        mapTypeId: google.maps.MapTypeId.MAP
-    });
+// function initMap() {
+//     map = new google.maps.Map(document.getElementById('map'), {
+//         zoom: 10,
+//         center: {
+//             lat: 41.8914,
+//             lng: -87.666
+//         },
+//         mapTypeId: google.maps.MapTypeId.MAP
+//     });
 
-    heatmap = new google.maps.visualization.HeatmapLayer({
-        data: getPoints(),
-        map: map
-    });
-}
+//     heatmap = new google.maps.visualization.HeatmapLayer({
+//         data: getPoints(),
+//         map: map
+//     });
+// }
 
-function toggleHeatmap() {
-    heatmap.setMap(heatmap.getMap() ? null : map);
-}
+// function toggleHeatmap() {
+//     heatmap.setMap(heatmap.getMap() ? null : map);
+// }
 
-function changeGradient() {
-    var gradient = [
-        'rgba(0, 255, 255, 0)',
-        'rgba(0, 255, 255, 1)',
-        'rgba(0, 191, 255, 1)',
-        'rgba(0, 127, 255, 1)',
-        'rgba(0, 63, 255, 1)',
-        'rgba(0, 0, 255, 1)',
-        'rgba(0, 0, 223, 1)',
-        'rgba(0, 0, 191, 1)',
-        'rgba(0, 0, 159, 1)',
-        'rgba(0, 0, 127, 1)',
-        'rgba(63, 0, 91, 1)',
-        'rgba(127, 0, 63, 1)',
-        'rgba(191, 0, 31, 1)',
-        'rgba(255, 0, 0, 1)'
-    ];
-    heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
-}
+// function changeGradient() {
+//     var gradient = [
+//         'rgba(0, 255, 255, 0)',
+//         'rgba(0, 255, 255, 1)',
+//         'rgba(0, 191, 255, 1)',
+//         'rgba(0, 127, 255, 1)',
+//         'rgba(0, 63, 255, 1)',
+//         'rgba(0, 0, 255, 1)',
+//         'rgba(0, 0, 223, 1)',
+//         'rgba(0, 0, 191, 1)',
+//         'rgba(0, 0, 159, 1)',
+//         'rgba(0, 0, 127, 1)',
+//         'rgba(63, 0, 91, 1)',
+//         'rgba(127, 0, 63, 1)',
+//         'rgba(191, 0, 31, 1)',
+//         'rgba(255, 0, 0, 1)'
+//     ];
+//     heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
+// }
 
-function changeRadius() {
-    heatmap.set('radius', heatmap.get('radius') ? null : 20);
-}
+// function changeRadius() {
+//     heatmap.set('radius', heatmap.get('radius') ? null : 20);
+// }
 
-function changeOpacity() {
-    heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
-}
+// function changeOpacity() {
+//     heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
+// }
 
 // my stuff
 var coordinates = [];
 
 // crime data point collection
-for (var i = 0; i < crimeData.length; i++) {
-    if ((crimeData[i].hasOwnProperty('latitude')) && (crimeData[i].hasOwnProperty('longitude'))) {
-        coordinates.push([crimeData[i].latitude, crimeData[i].longitude]);
-    }
-}
+// for (var i = 0; i < crimeData.length; i++) {
+//     if ((crimeData[i].hasOwnProperty('latitude')) && (crimeData[i].hasOwnProperty('longitude'))) {
+//         coordinates.push([crimeData[i].latitude, crimeData[i].longitude]);
+//     }
+// }
 
 //service datapoint collection
 // for (var i = 0; i < serviceDataLength; i++) {
@@ -89,14 +74,14 @@ for (var i = 0; i < crimeData.length; i++) {
 //     }
 // }
 
-function getPoints() {
-    var points = [];
-    for (var i = 0; i < coordinates.length; i++) {
-        points.push(new google.maps.LatLng(coordinates[i][0], coordinates[i][1]));
-    }
-    return points;
+// function getPoints() {
+//     var points = [];
+//     for (var i = 0; i < coordinates.length; i++) {
+//         points.push(new google.maps.LatLng(coordinates[i][0], coordinates[i][1]));
+//     }
+//     return points;
 
-}
+// }
 
 // Crime Type Bar Chart
 
@@ -106,22 +91,25 @@ var crimePromise = $.ajax({
 });
 
 var crimeByType = {};
+var crimeByWard = {}
 var crimeRank = [];
+var crimeCounts = []
 
 crimePromise.done(crimeSuccess);
 
 function crimeSuccess(data) {
     $.each(data, function(index, value) {
-        crimeByTypeFunction(value);
+        crimeCategorize(value, 'primary_type', crimeByType );
+        crimeCategorize(value, 'ward', crimeByWard)
     });
+    splitObject(crimeByWard, crimeCounts, 1)
     sortDescending(crimeByType);
     createBarChart([crimeRank[0][0], crimeRank[1][0], crimeRank[2][0], crimeRank[3][0], crimeRank[4][0], crimeRank[5][0]], [crimeRank[0][1], crimeRank[1][1], crimeRank[2][1], crimeRank[3][1], crimeRank[4][1], crimeRank[5][1]]);
 };
 
-
-function crimeByTypeFunction(element) {
-    var type = element.primary_type;
-    crimeByType[type] = crimeByType[type] ? crimeByType[type] + 1 : 1;
+function crimeCategorize(element, property, targetObject) {
+    var type = element[property];
+    targetObject[type] = targetObject[type] ? targetObject[type] + 1 : 1;
 }
 
 function sortDescending(object) {
@@ -143,56 +131,6 @@ function createBarChart(xAxis, yAxis) {
     Plotly.newPlot('crime_type_bar_chart', crimeTypeData)
 }
 
-// Crime/Service Request by ward
-
-//crime by ward data
-// var crimeByWard = {};
-
-// var crimes = [];
-
-// for (var i = 0; i < crimeDataLength; i ++ ){
-//   var num = crimeData[i].ward;
-//   crimeByWard[num] = crimeByWard[num] ? crimeByWard[num] + 1 : 1;
-// }
-
-// for (var o in crimeByWard){
-//     crimes.push(crimeByWard[o]);
-// };
-
-//service by ward data
-
-// var serviceByWard = {};
-// var serviceCounts = [];
-
-// for (var i = 0; i < serviceDataLength; i ++ ){
-//   var num = serviceData[i]['extended_attributes']['ward'];
-//   serviceByWard[num] = serviceByWard[num] ? serviceByWard[num] + 1 : 1;
-// }
-
-// for (var o in serviceByWard){
-//     serviceCounts.push(serviceByWard[o]);
-// }
-
-// var crimeTrace = {
-//   x: Object.keys(crimeByWard),
-//   y: crimes,
-//   name: 'Crime',
-//   type: 'bar'
-// };
-
-// var serviceTrace = {
-//   x: Object.keys(serviceByWard),
-//   y: serviceCounts,
-//   name: '311 Requests',
-//   type: 'bar'
-// };
-
-// var groupedBarData = [crimeTrace, serviceTrace];
-
-// var groupedBarLayout = {barmode: 'group'};
-
-// Plotly.newPlot('crime_311_by_ward', groupedBarData, groupedBarLayout);
-
 // bubble chart
 
 var coordinates = [];
@@ -207,9 +145,9 @@ var servicePromise = $.ajax({
     dataType: 'jsonp'
 });
 
-servicePromise.done(successFunction);
+servicePromise.done(serviceSuccess);
 
-function successFunction(data) {
+function serviceSuccess(data) {
     $.each(data, function(index, value) {
         coordinateFunction(value);
         serviceByWardFunction(value);
@@ -276,4 +214,32 @@ function createBubbleChart(xCoordinates, yCoordinates, sizes) {
     };
 
     Plotly.newPlot('bubble', bubbleData, bubbleLayout);
+}
+
+// calling chart when both promises come back
+
+$.when( crimePromise, servicePromise).then(function() {
+  createGroupedBarChart(Object.keys(crimeByWard), crimeCounts, Object.keys(serviceByWard), serviceCounts)
+});
+
+function createGroupedBarChart(crimeWards, crimeCounts, serviceWards, serviceCounts) {
+  var crimeTrace = {
+  x: crimeWards,
+  y: crimeCounts,
+  name: 'Crime',
+  type: 'bar'
+};
+
+var serviceTrace = {
+  x: serviceWards,
+  y: serviceCounts,
+  name: '311 Requests',
+  type: 'bar'
+};
+
+var groupedBarData = [crimeTrace, serviceTrace];
+
+var groupedBarLayout = {barmode: 'group'};
+
+Plotly.newPlot('crime_311_by_ward', groupedBarData, groupedBarLayout);
 }
