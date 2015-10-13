@@ -5,21 +5,24 @@ var crimeData2010 = [];
 $.ajax({
     url: "https://data.cityofchicago.org/resource/6zsd-86xi.json?year=2010",
     dataType: 'json',
-    async: false,
-    success: function(results){
-      crimeData2010.push(results.responseText);
-      console.log(results);
+    async: true,
+    success: function(results)
+    {
+      $.each(results, function(index, value){
+        crimeData2010.push(value);
+      });
+      // console.log(results);
     }
 });
 
 console.log(crimeData2010[0]);
 
-var xAxis = [1,2,3,4,5],
-    yAxis = [1, 2, 4, 8, 44];
+// var xAxis = [1,2,3,4,5],
+//     yAxis = [1, 2, 4, 8, 44];
 
 
- TESTER = document.getElementById('tester');
-  Plotly.plot( TESTER, [{
-  x: xAxis,
-  y: yAxis }], {
-  margin: { t: 0 } } );
+//  TESTER = document.getElementById('tester');
+//   Plotly.plot( TESTER, [{
+//   x: xAxis,
+//   y: yAxis }], {
+//   margin: { t: 0 } } );
