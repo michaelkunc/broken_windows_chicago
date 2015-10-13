@@ -1,88 +1,3 @@
-// // caching length of datasets
-// var crimeDataLength = crimeData.length;
-
-
-// HEAT MAP
-// var map, heatmap;
-
-// function initMap() {
-//     map = new google.maps.Map(document.getElementById('map'), {
-//         zoom: 10,
-//         center: {
-//             lat: 41.8914,
-//             lng: -87.666
-//         },
-//         mapTypeId: google.maps.MapTypeId.MAP
-//     });
-
-//     heatmap = new google.maps.visualization.HeatmapLayer({
-//         data: getPoints(),
-//         map: map
-//     });
-// }
-
-// function toggleHeatmap() {
-//     heatmap.setMap(heatmap.getMap() ? null : map);
-// }
-
-// function changeGradient() {
-//     var gradient = [
-//         'rgba(0, 255, 255, 0)',
-//         'rgba(0, 255, 255, 1)',
-//         'rgba(0, 191, 255, 1)',
-//         'rgba(0, 127, 255, 1)',
-//         'rgba(0, 63, 255, 1)',
-//         'rgba(0, 0, 255, 1)',
-//         'rgba(0, 0, 223, 1)',
-//         'rgba(0, 0, 191, 1)',
-//         'rgba(0, 0, 159, 1)',
-//         'rgba(0, 0, 127, 1)',
-//         'rgba(63, 0, 91, 1)',
-//         'rgba(127, 0, 63, 1)',
-//         'rgba(191, 0, 31, 1)',
-//         'rgba(255, 0, 0, 1)'
-//     ];
-//     heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
-// }
-
-// function changeRadius() {
-//     heatmap.set('radius', heatmap.get('radius') ? null : 20);
-// }
-
-// function changeOpacity() {
-//     heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
-// }
-
-// my stuff
-var coordinates = [];
-
-// crime data point collection
-// for (var i = 0; i < crimeData.length; i++) {
-//     if ((crimeData[i].hasOwnProperty('latitude')) && (crimeData[i].hasOwnProperty('longitude'))) {
-//         coordinates.push([crimeData[i].latitude, crimeData[i].longitude]);
-//     }
-// }
-
-//service datapoint collection
-// for (var i = 0; i < serviceDataLength; i++) {
-//     if ((serviceData[i].hasOwnProperty('lat')) && (serviceData[i].hasOwnProperty('long'))) {
-//         serviceData[i]['longitude'] = serviceData[i]['long'];
-//         delete serviceData[i]['long'];
-//         serviceData[i]['latitude'] = serviceData[i]['lat'];
-//         delete serviceData[i]['lat'];
-//         coordinates.push([serviceData[i].latitude, serviceData[i].longitude]);
-//     }
-// }
-
-// function getPoints() {
-//     var points = [];
-//     for (var i = 0; i < coordinates.length; i++) {
-//         points.push(new google.maps.LatLng(coordinates[i][0], coordinates[i][1]));
-//     }
-//     return points;
-
-// }
-
 // Crime Type Bar Chart
 
 var crimePromise = $.ajax({
@@ -90,6 +5,7 @@ var crimePromise = $.ajax({
     dataType: 'json'
 });
 
+var coordinates = [];
 var crimeByType = {};
 var crimeByWard = {}
 var crimeRank = [];
@@ -99,13 +15,21 @@ crimePromise.done(crimeSuccess);
 
 function crimeSuccess(data) {
     $.each(data, function(index, value) {
-        crimeCategorize(value, 'primary_type', crimeByType );
+        getCrimeCoordinates(value);
+        crimeCategorize(value, 'primary_type', crimeByType);
         crimeCategorize(value, 'ward', crimeByWard)
     });
     splitObject(crimeByWard, crimeCounts, 1)
     sortDescending(crimeByType);
     createBarChart([crimeRank[0][0], crimeRank[1][0], crimeRank[2][0], crimeRank[3][0], crimeRank[4][0], crimeRank[5][0]], [crimeRank[0][1], crimeRank[1][1], crimeRank[2][1], crimeRank[3][1], crimeRank[4][1], crimeRank[5][1]]);
 };
+
+function getCrimeCoordinates(element) {
+    if ((element.hasOwnProperty('latitude')) && (element.hasOwnProperty('longitude'))) {
+        coordinates.push([element.latitude, element.longitude]);
+    }
+}
+
 
 function crimeCategorize(element, property, targetObject) {
     var type = element[property];
@@ -133,7 +57,6 @@ function createBarChart(xAxis, yAxis) {
 
 // bubble chart
 
-var coordinates = [];
 var msDay = 60 * 60 * 24 * 1000
 var serviceByWard = {};
 var wardResponseData = {};
@@ -149,7 +72,7 @@ servicePromise.done(serviceSuccess);
 
 function serviceSuccess(data) {
     $.each(data, function(index, value) {
-        coordinateFunction(value);
+        getServiceCoordinates(value);
         serviceByWardFunction(value);
         summarizeWardData(value);
     });
@@ -159,7 +82,7 @@ function serviceSuccess(data) {
 };
 
 
-function coordinateFunction(element) {
+function getServiceCoordinates(element) {
     if ((element.hasOwnProperty('lat')) && (element.hasOwnProperty('long'))) {
         element['longitude'] = element['long'];
         delete element['long'];
@@ -218,28 +141,96 @@ function createBubbleChart(xCoordinates, yCoordinates, sizes) {
 
 // calling chart when both promises come back
 
-$.when( crimePromise, servicePromise).then(function() {
-  createGroupedBarChart(Object.keys(crimeByWard), crimeCounts, Object.keys(serviceByWard), serviceCounts)
-});
 
+
+// grouped bar chart
 function createGroupedBarChart(crimeWards, crimeCounts, serviceWards, serviceCounts) {
-  var crimeTrace = {
-  x: crimeWards,
-  y: crimeCounts,
-  name: 'Crime',
-  type: 'bar'
-};
+    var crimeTrace = {
+        x: crimeWards,
+        y: crimeCounts,
+        name: 'Crime',
+        type: 'bar'
+    };
 
-var serviceTrace = {
-  x: serviceWards,
-  y: serviceCounts,
-  name: '311 Requests',
-  type: 'bar'
-};
+    var serviceTrace = {
+        x: serviceWards,
+        y: serviceCounts,
+        name: '311 Requests',
+        type: 'bar'
+    };
 
-var groupedBarData = [crimeTrace, serviceTrace];
+    var groupedBarData = [crimeTrace, serviceTrace];
 
-var groupedBarLayout = {barmode: 'group'};
+    var groupedBarLayout = {
+        barmode: 'group'
+    };
 
-Plotly.newPlot('crime_311_by_ward', groupedBarData, groupedBarLayout);
+    Plotly.newPlot('crime_311_by_ward', groupedBarData, groupedBarLayout);
+}
+
+$.when(crimePromise, servicePromise).then(function() {
+    createGroupedBarChart(Object.keys(crimeByWard), crimeCounts, Object.keys(serviceByWard), serviceCounts)
+    initMap();
+});
+// HEAT MAP
+
+var map, heatmap;
+function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 10,
+        center: {
+            lat: 41.8914,
+            lng: -87.666
+        },
+        mapTypeId: google.maps.MapTypeId.MAP
+    });
+
+    heatmap = new google.maps.visualization.HeatmapLayer({
+        data: getPoints(),
+        map: map
+    });
+}
+
+function toggleHeatmap() {
+    heatmap.setMap(heatmap.getMap() ? null : map);
+}
+
+function changeGradient() {
+    var gradient = [
+        'rgba(0, 255, 255, 0)',
+        'rgba(0, 255, 255, 1)',
+        'rgba(0, 191, 255, 1)',
+        'rgba(0, 127, 255, 1)',
+        'rgba(0, 63, 255, 1)',
+        'rgba(0, 0, 255, 1)',
+        'rgba(0, 0, 223, 1)',
+        'rgba(0, 0, 191, 1)',
+        'rgba(0, 0, 159, 1)',
+        'rgba(0, 0, 127, 1)',
+        'rgba(63, 0, 91, 1)',
+        'rgba(127, 0, 63, 1)',
+        'rgba(191, 0, 31, 1)',
+        'rgba(255, 0, 0, 1)'
+    ];
+    heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
+}
+
+function changeRadius() {
+    heatmap.set('radius', heatmap.get('radius') ? null : 20);
+}
+
+function changeOpacity() {
+    heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
+}
+
+
+
+function getPoints() {
+    var points = [];
+    for (var i = 0; i < coordinates.length; i++) {
+        points.push(new google.maps.LatLng(coordinates[i][0], coordinates[i][1]));
+        console.log(coordinates[i][0]);
+    }
+    return points;
+
 }
