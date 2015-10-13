@@ -1,32 +1,17 @@
 var crimeData = [];
-var serviceData = [];
-
 
 // ajax call to crime dataset
 $.ajax({
     url: "https://data.cityofchicago.org/resource/6zsd-86xi.json?year=2014",
     dataType: 'json',
     async: false,
-    success: function(results)
-    {
-      $.each(results, function(index, value){
-        crimeData.push(value);
-      });
+    success: function(results) {
+        $.each(results, function(index, value) {
+            crimeData.push(value);
+        });
     }
 });
 
-// ajax call to 311 dataset
-
-// $.ajax({
-//     url: "http://311api.cityofchicago.org/open311/v2/requests.json?start_date=2014-01-01T00:00:00Z&end_date=2014-12-31T00:00:00Z&extensions=extensions=true",
-//     dataType: 'jsonp',
-//     success: function(results)
-//     {
-//       $.each(results, function(index, value){
-//         serviceData.push(value);
-//       });
-//     }
-// });
 
 // caching length of datasets
 var crimeDataLength = crimeData.length;
@@ -115,29 +100,48 @@ function getPoints() {
 
 // Crime Type Bar Chart
 
+var crimePromise = $.ajax({
+    url: "https://data.cityofchicago.org/resource/6zsd-86xi.json?year=2014",
+    dataType: 'json'
+});
+
 var crimeByType = {};
+var crimeRank = [];
 
-for (var i = 0; i < crimeDataLength; i ++ ){
-  var num = crimeData[i].primary_type;
-  crimeByType[num] = crimeByType[num] ? crimeByType[num] + 1 : 1;
-}
+crimePromise.done(crimeSuccess);
 
-var crimeCounts = [];
-// sorts the crime counts descending
-for (var crime in crimeByType){
-  crimeCounts.push([crime, crimeByType[crime]]);
-  crimeCounts.sort(function(a,b) {return b[1] - a[1]});
+function crimeSuccess(data) {
+    $.each(data, function(index, value) {
+        crimeByTypeFunction(value);
+    });
+    sortDescending(crimeByType);
+    createBarChart([crimeRank[0][0], crimeRank[1][0], crimeRank[2][0], crimeRank[3][0], crimeRank[4][0], crimeRank[5][0]], [crimeRank[0][1], crimeRank[1][1], crimeRank[2][1], crimeRank[3][1], crimeRank[4][1], crimeRank[5][1]]);
 };
 
-var crimeTypeData = [
-  {
-    x: [crimeCounts[0][0], crimeCounts[1][0], crimeCounts[2][0], crimeCounts[3][0], crimeCounts[4][0], crimeCounts[5][0]],
-    y: [crimeCounts[0][1], crimeCounts[1][1], crimeCounts[2][1], crimeCounts[3][1], crimeCounts[4][1], crimeCounts[5][1]],
-    type: 'bar'
-  }
-];
 
-Plotly.newPlot('crime_type_bar_chart', crimeTypeData);
+function crimeByTypeFunction(element) {
+    var type = element.primary_type;
+    crimeByType[type] = crimeByType[type] ? crimeByType[type] + 1 : 1;
+}
+
+function sortDescending(object) {
+    for (var o in object) {
+        crimeRank.push([o, crimeByType[o]]);
+        crimeRank.sort(function(a, b) {
+            return b[1] - a[1]
+        });
+    };
+}
+
+function createBarChart(xAxis, yAxis) {
+    var crimeTypeData = [{
+        x: xAxis,
+        y: yAxis,
+        type: 'bar'
+    }]
+
+    Plotly.newPlot('crime_type_bar_chart', crimeTypeData)
+}
 
 // Crime/Service Request by ward
 
@@ -192,7 +196,7 @@ Plotly.newPlot('crime_type_bar_chart', crimeTypeData);
 // bubble chart
 
 var coordinates = [];
-var msDay = 60*60*24*1000
+var msDay = 60 * 60 * 24 * 1000
 var serviceByWard = {};
 var wardResponseData = {};
 var serviceCounts = [];
@@ -211,20 +215,20 @@ function successFunction(data) {
         serviceByWardFunction(value);
         summarizeWardData(value);
     });
-    splitObject(serviceByWard, serviceCounts,1);
+    splitObject(serviceByWard, serviceCounts, 1);
     splitObject(wardResponseData, responses, 50);
     createBubbleChart(Object.keys(serviceByWard), serviceCounts, responses);
 };
 
 
-function coordinateFunction(element){
-  if ((element.hasOwnProperty('lat')) && (element.hasOwnProperty('long'))) {
+function coordinateFunction(element) {
+    if ((element.hasOwnProperty('lat')) && (element.hasOwnProperty('long'))) {
         element['longitude'] = element['long'];
         delete element['long'];
         element['latitude'] = element['lat'];
         delete element['lat'];
         coordinates.push([element.latitude, element.longitude]);
-      }
+    }
 }
 
 function serviceByWardFunction(element) {
@@ -233,43 +237,43 @@ function serviceByWardFunction(element) {
 }
 
 function summarizeWardData(element) {
-  if (!wardResponseData[element.extended_attributes.ward]) {
-      wardResponseData[element.extended_attributes.ward] = 0;
+    if (!wardResponseData[element.extended_attributes.ward]) {
+        wardResponseData[element.extended_attributes.ward] = 0;
     }
     var openDate = new Date(element.requested_datetime);
     var closeDate = new Date(element.updated_datetime);
 
     wardResponseData[element.extended_attributes.ward] += Math.floor((closeDate - openDate) / msDay);
-    serviceByWard[element.extended_attributes.ward] ++;
+    serviceByWard[element.extended_attributes.ward]++;
 }
 
-function splitObject(object, array, factor){
-  for (var o in object){
-    array.push(object[o]/factor)
-  }
+function splitObject(object, array, factor) {
+    for (var o in object) {
+        array.push(object[o] / factor)
+    }
 }
 
 
-function createBubbleChart(xCoordinates, yCoordinates, sizes){
-  var bubbleTrace1 = {
-  x: xCoordinates,
-  y: yCoordinates,
-  text: ['A<br>size: 40', 'B<br>size: 60', 'C<br>size: 80', 'D<br>size: 100'],
-  mode: 'markers',
-  marker: {
-    color: ['rgb(93, 164, 214)', 'rgb(255, 144, 14)',  'rgb(44, 160, 101)', 'rgb(255, 65, 54)'],
-    size: sizes
-  }
-};
+function createBubbleChart(xCoordinates, yCoordinates, sizes) {
+    var bubbleTrace1 = {
+        x: xCoordinates,
+        y: yCoordinates,
+        text: ['A<br>size: 40', 'B<br>size: 60', 'C<br>size: 80', 'D<br>size: 100'],
+        mode: 'markers',
+        marker: {
+            color: ['rgb(93, 164, 214)', 'rgb(255, 144, 14)', 'rgb(44, 160, 101)', 'rgb(255, 65, 54)'],
+            size: sizes
+        }
+    };
 
-var bubbleData = [bubbleTrace1];
+    var bubbleData = [bubbleTrace1];
 
-var bubbleLayout = {
-  // title: '311 Average Response times by ward',
-  showlegend: false,
-  height: 500,
-  width: 500
-};
+    var bubbleLayout = {
+        // title: '311 Average Response times by ward',
+        showlegend: false,
+        height: 500,
+        width: 500
+    };
 
-Plotly.newPlot('bubble', bubbleData, bubbleLayout);
+    Plotly.newPlot('bubble', bubbleData, bubbleLayout);
 }
