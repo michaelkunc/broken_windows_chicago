@@ -3387,7 +3387,7 @@ for (var o in wardCounts){
 
 var responses = [];
 for (var o in wardData) {
-  responses.push(wardData[o]/100);
+  responses.push(wardData[o]/50);
 }
 
 
