@@ -1416,6 +1416,11 @@ var serviceData = [{
     }]
 }];
 
+// caching length of datasets
+var crimeDataLength = crimeData.length;
+var serviceDataLength = serviceData.length;
+
+
 // HEAT MAP
 var map, heatmap;
 
@@ -1478,7 +1483,7 @@ for (var i = 0; i < crimeData.length; i++) {
 }
 
 //service datapoint collection
-for (var i = 0; i < serviceData.length; i++) {
+for (var i = 0; i < serviceDataLength; i++) {
     if ((serviceData[i].hasOwnProperty('lat')) && (serviceData[i].hasOwnProperty('long'))) {
         serviceData[i]['longitude'] = serviceData[i]['long'];
         delete serviceData[i]['long'];
@@ -1501,7 +1506,7 @@ function getPoints() {
 
 var crimeByType = {};
 
-for (var i = 0; i < crimeData.length; i ++ ){
+for (var i = 0; i < crimeDataLength; i ++ ){
   var num = crimeData[i].primary_type;
   crimeByType[num] = crimeByType[num] ? crimeByType[num] + 1 : 1;
 }
@@ -1513,7 +1518,7 @@ for (var crime in crimeByType){
   crimeCounts.sort(function(a,b) {return b[1] - a[1]});
 };
 
-var data = [
+var crimeTypeData = [
   {
     x: [crimeCounts[0][0], crimeCounts[1][0], crimeCounts[2][0], crimeCounts[3][0], crimeCounts[4][0], crimeCounts[5][0]],
     y: [crimeCounts[0][1], crimeCounts[1][1], crimeCounts[2][1], crimeCounts[3][1], crimeCounts[4][1], crimeCounts[5][1]],
@@ -1521,7 +1526,7 @@ var data = [
   }
 ];
 
-Plotly.newPlot('crime_type_bar_chart', data);
+Plotly.newPlot('crime_type_bar_chart', crimeTypeData);
 
 // Crime/Service Request by ward
 
@@ -1530,7 +1535,7 @@ var crimeByWard = {};
 
 var crimes = [];
 
-for (var i = 0; i < crimeData.length; i ++ ){
+for (var i = 0; i < crimeDataLength; i ++ ){
   var num = crimeData[i].ward;
   crimeByWard[num] = crimeByWard[num] ? crimeByWard[num] + 1 : 1;
 }
@@ -1542,41 +1547,40 @@ for (var o in crimeByWard){
 //service by ward data
 
 var serviceByWard = {};
-var services = [];
+var serviceCounts = [];
 
-for (var i = 0; i < serviceData.length; i ++ ){
+for (var i = 0; i < serviceDataLength; i ++ ){
   var num = serviceData[i]['extended_attributes']['ward'];
   serviceByWard[num] = serviceByWard[num] ? serviceByWard[num] + 1 : 1;
 }
 
 for (var o in serviceByWard){
-    services.push(serviceByWard[o]);
+    serviceCounts.push(serviceByWard[o]);
 }
 
-var trace1 = {
+var crimeTrace = {
   x: Object.keys(crimeByWard),
   y: crimes,
   name: 'Crime',
   type: 'bar'
 };
 
-var trace2 = {
+var serviceTrace = {
   x: Object.keys(serviceByWard),
-  y: services,
+  y: serviceCounts,
   name: '311 Requests',
   type: 'bar'
 };
 
-var data = [trace1, trace2];
+var groupedBarData = [crimeTrace, serviceTrace];
 
-var layout = {barmode: 'group'};
+var groupedBarLayout = {barmode: 'group'};
 
-Plotly.newPlot('crime_311_by_ward', data, layout);
+Plotly.newPlot('crime_311_by_ward', groupedBarData, groupedBarLayout);
 
 // bubble chart
 
 var wardData = {};
-var wardCounts = {};
 var avgResponse = [];
 var msDay = 60*60*24*1000;
 
@@ -1584,24 +1588,17 @@ serviceData.forEach(
   function(e) {
     if (!wardData[e.extended_attributes.ward]) {
       wardData[e.extended_attributes.ward] = 0;
-      wardCounts[e.extended_attributes.ward] = 0;
     }
     var openDate = new Date(e.requested_datetime);
     var closeDate = new Date(e.updated_datetime);
 
     wardData[e.extended_attributes.ward] += Math.floor((closeDate - openDate) / msDay);
-    wardCounts[e.extended_attributes.ward] ++;
+    serviceByWard[e.extended_attributes.ward] ++;
   }
 )
 
 for (var ward in wardData) {
-  avgResponse.push({ward : ward, responseTime : wardData[ward] / wardCounts[ward]})
-}
-
-// this exists elsewhere in the main chart.js file
-var serviceCount = [];
-for (var o in wardCounts){
-  serviceCount.push(wardCounts[o]);
+  avgResponse.push({ward : ward, responseTime : wardData[ward] / serviceByWard[ward]})
 }
 
 var responses = [];
@@ -1612,7 +1609,7 @@ for (var o in wardData) {
 
 var bubbleTrace1 = {
   x: Object.keys(wardData),
-  y: serviceCount,
+  y: serviceCounts,
   text: ['A<br>size: 40', 'B<br>size: 60', 'C<br>size: 80', 'D<br>size: 100'],
   mode: 'markers',
   marker: {
