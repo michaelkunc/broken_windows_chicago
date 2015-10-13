@@ -168,10 +168,7 @@ function createGroupedBarChart(crimeWards, crimeCounts, serviceWards, serviceCou
     Plotly.newPlot('crime_311_by_ward', groupedBarData, groupedBarLayout);
 }
 
-$.when(crimePromise, servicePromise).then(function() {
-    createGroupedBarChart(Object.keys(crimeByWard), crimeCounts, Object.keys(serviceByWard), serviceCounts)
-    initMap();
-});
+
 // HEAT MAP
 
 var map, heatmap;
@@ -223,8 +220,6 @@ function changeOpacity() {
     heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
 }
 
-
-
 function getPoints() {
     var points = [];
     for (var i = 0; i < coordinates.length; i++) {
@@ -234,3 +229,8 @@ function getPoints() {
     return points;
 
 }
+
+$.when(crimePromise, servicePromise).then(function() {
+    createGroupedBarChart(Object.keys(crimeByWard), crimeCounts, Object.keys(serviceByWard), serviceCounts)
+    initMap();
+});
