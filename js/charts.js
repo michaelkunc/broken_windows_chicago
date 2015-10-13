@@ -1,6 +1,7 @@
 var crimeData = [];
 var serviceData = [];
 
+
 // ajax call to crime dataset
 $.ajax({
     url: "https://data.cityofchicago.org/resource/6zsd-86xi.json?year=2014",
@@ -18,8 +19,7 @@ $.ajax({
 
 // $.ajax({
 //     url: "http://311api.cityofchicago.org/open311/v2/requests.json?start_date=2014-01-01T00:00:00Z&end_date=2014-12-31T00:00:00Z&extensions=extensions=true",
-//     dataType: 'json',
-//     async: false,
+//     dataType: 'jsonp',
 //     success: function(results)
 //     {
 //       $.each(results, function(index, value){
@@ -30,7 +30,6 @@ $.ajax({
 
 // caching length of datasets
 var crimeDataLength = crimeData.length;
-var serviceDataLength = serviceData.length;
 
 
 // HEAT MAP
@@ -95,15 +94,15 @@ for (var i = 0; i < crimeData.length; i++) {
 }
 
 //service datapoint collection
-for (var i = 0; i < serviceDataLength; i++) {
-    if ((serviceData[i].hasOwnProperty('lat')) && (serviceData[i].hasOwnProperty('long'))) {
-        serviceData[i]['longitude'] = serviceData[i]['long'];
-        delete serviceData[i]['long'];
-        serviceData[i]['latitude'] = serviceData[i]['lat'];
-        delete serviceData[i]['lat'];
-        coordinates.push([serviceData[i].latitude, serviceData[i].longitude]);
-    }
-}
+// for (var i = 0; i < serviceDataLength; i++) {
+//     if ((serviceData[i].hasOwnProperty('lat')) && (serviceData[i].hasOwnProperty('long'))) {
+//         serviceData[i]['longitude'] = serviceData[i]['long'];
+//         delete serviceData[i]['long'];
+//         serviceData[i]['latitude'] = serviceData[i]['lat'];
+//         delete serviceData[i]['lat'];
+//         coordinates.push([serviceData[i].latitude, serviceData[i].longitude]);
+//     }
+// }
 
 function getPoints() {
     var points = [];
@@ -143,90 +142,123 @@ Plotly.newPlot('crime_type_bar_chart', crimeTypeData);
 // Crime/Service Request by ward
 
 //crime by ward data
-var crimeByWard = {};
+// var crimeByWard = {};
 
-var crimes = [];
+// var crimes = [];
 
-for (var i = 0; i < crimeDataLength; i ++ ){
-  var num = crimeData[i].ward;
-  crimeByWard[num] = crimeByWard[num] ? crimeByWard[num] + 1 : 1;
-}
+// for (var i = 0; i < crimeDataLength; i ++ ){
+//   var num = crimeData[i].ward;
+//   crimeByWard[num] = crimeByWard[num] ? crimeByWard[num] + 1 : 1;
+// }
 
-for (var o in crimeByWard){
-    crimes.push(crimeByWard[o]);
-};
+// for (var o in crimeByWard){
+//     crimes.push(crimeByWard[o]);
+// };
 
 //service by ward data
 
-var serviceByWard = {};
-var serviceCounts = [];
+// var serviceByWard = {};
+// var serviceCounts = [];
 
-for (var i = 0; i < serviceDataLength; i ++ ){
-  var num = serviceData[i]['extended_attributes']['ward'];
-  serviceByWard[num] = serviceByWard[num] ? serviceByWard[num] + 1 : 1;
-}
+// for (var i = 0; i < serviceDataLength; i ++ ){
+//   var num = serviceData[i]['extended_attributes']['ward'];
+//   serviceByWard[num] = serviceByWard[num] ? serviceByWard[num] + 1 : 1;
+// }
 
-for (var o in serviceByWard){
-    serviceCounts.push(serviceByWard[o]);
-}
+// for (var o in serviceByWard){
+//     serviceCounts.push(serviceByWard[o]);
+// }
 
-var crimeTrace = {
-  x: Object.keys(crimeByWard),
-  y: crimes,
-  name: 'Crime',
-  type: 'bar'
-};
+// var crimeTrace = {
+//   x: Object.keys(crimeByWard),
+//   y: crimes,
+//   name: 'Crime',
+//   type: 'bar'
+// };
 
-var serviceTrace = {
-  x: Object.keys(serviceByWard),
-  y: serviceCounts,
-  name: '311 Requests',
-  type: 'bar'
-};
+// var serviceTrace = {
+//   x: Object.keys(serviceByWard),
+//   y: serviceCounts,
+//   name: '311 Requests',
+//   type: 'bar'
+// };
 
-var groupedBarData = [crimeTrace, serviceTrace];
+// var groupedBarData = [crimeTrace, serviceTrace];
 
-var groupedBarLayout = {barmode: 'group'};
+// var groupedBarLayout = {barmode: 'group'};
 
-Plotly.newPlot('crime_311_by_ward', groupedBarData, groupedBarLayout);
+// Plotly.newPlot('crime_311_by_ward', groupedBarData, groupedBarLayout);
 
 // bubble chart
 
-var wardData = {};
-var avgResponse = [];
-var msDay = 60*60*24*1000;
-
-serviceData.forEach(
-  function(e) {
-    if (!wardData[e.extended_attributes.ward]) {
-      wardData[e.extended_attributes.ward] = 0;
-    }
-    var openDate = new Date(e.requested_datetime);
-    var closeDate = new Date(e.updated_datetime);
-
-    wardData[e.extended_attributes.ward] += Math.floor((closeDate - openDate) / msDay);
-    serviceByWard[e.extended_attributes.ward] ++;
-  }
-)
-
-for (var ward in wardData) {
-  avgResponse.push({ward : ward, responseTime : wardData[ward] / serviceByWard[ward]})
-}
-
+var coordinates = [];
+var msDay = 60*60*24*1000
+var serviceByWard = {};
+var wardResponseData = {};
+var serviceCounts = [];
 var responses = [];
-for (var o in wardData) {
-  responses.push(wardData[o]/50);
+
+var servicePromise = $.ajax({
+    url: "http://311api.cityofchicago.org/open311/v2/requests.json?start_date=2014-01-01T00:00:00Z&end_date=2014-12-31T00:00:00Z&extensions=extensions=true",
+    dataType: 'jsonp'
+});
+
+servicePromise.done(successFunction);
+
+function successFunction(data) {
+    $.each(data, function(index, value) {
+        coordinateFunction(value);
+        serviceByWardFunction(value);
+        summarizeWardData(value);
+    });
+    splitObject(serviceByWard, serviceCounts,1);
+    splitObject(wardResponseData, responses, 50);
+    createBubbleChart(Object.keys(serviceByWard), serviceCounts, responses);
+};
+
+
+function coordinateFunction(element){
+  if ((element.hasOwnProperty('lat')) && (element.hasOwnProperty('long'))) {
+        element['longitude'] = element['long'];
+        delete element['long'];
+        element['latitude'] = element['lat'];
+        delete element['lat'];
+        coordinates.push([element.latitude, element.longitude]);
+      }
+}
+
+function serviceByWardFunction(element) {
+    var num = element['extended_attributes']['ward'];
+    serviceByWard[num] = serviceByWard[num] ? serviceByWard[num] + 1 : 1;
+}
+
+function summarizeWardData(element) {
+  if (!wardResponseData[element.extended_attributes.ward]) {
+      wardResponseData[element.extended_attributes.ward] = 0;
+    }
+    var openDate = new Date(element.requested_datetime);
+    var closeDate = new Date(element.updated_datetime);
+
+    wardResponseData[element.extended_attributes.ward] += Math.floor((closeDate - openDate) / msDay);
+    serviceByWard[element.extended_attributes.ward] ++;
+}
+
+function splitObject(object, array, factor){
+  for (var o in object){
+    array.push(object[o]/factor)
+  }
 }
 
 
-var bubbleTrace1 = {
-  x: Object.keys(wardData),
-  y: serviceCounts,
+function createBubbleChart(xCoordinates, yCoordinates, sizes){
+  var bubbleTrace1 = {
+  x: xCoordinates,
+  y: yCoordinates,
   text: ['A<br>size: 40', 'B<br>size: 60', 'C<br>size: 80', 'D<br>size: 100'],
   mode: 'markers',
   marker: {
     color: ['rgb(93, 164, 214)', 'rgb(255, 144, 14)',  'rgb(44, 160, 101)', 'rgb(255, 65, 54)'],
-    size: responses
+    size: sizes
   }
 };
 
@@ -240,3 +272,4 @@ var bubbleLayout = {
 };
 
 Plotly.newPlot('bubble', bubbleData, bubbleLayout);
+}
